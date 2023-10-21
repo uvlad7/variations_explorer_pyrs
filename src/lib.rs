@@ -21,7 +21,7 @@ struct VariationsGraph {
 impl VariationsGraph {
     #[new]
     fn new() -> Self {
-        return Self { adjacency_map: HashMap::new(), need_cleanup: false };
+        Self { adjacency_map: HashMap::new(), need_cleanup: false }
     }
 
     /// Adds a node and its leaves into the graph. If the node already exist, leaves are concatenated.
