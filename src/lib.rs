@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use pyo3::prelude::*;
@@ -13,7 +13,7 @@ struct VariationsGraphNode {
 /// Stores graph of product MD5 values and their variants
 #[pyclass]
 struct VariationsGraph {
-    adjacency_map: HashMap<u128, RefCell<VariationsGraphNode>>,
+    adjacency_map: HashMap<u128, UnsafeCell<VariationsGraphNode>>,
     need_cleanup: bool,
 }
 
@@ -61,10 +61,10 @@ impl VariationsGraph {
         )?;
         match self.adjacency_map.get_mut(&prod) {
             Some(existing_variations) => {
-                existing_variations.borrow_mut().edges.append(&mut variations);
+                unsafe { (*existing_variations.get()).edges.append(&mut variations); }
             }
             None => {
-                self.adjacency_map.insert(prod, RefCell::new(VariationsGraphNode {
+                self.adjacency_map.insert(prod, UnsafeCell::new(VariationsGraphNode {
                     edges: variations,
                     visited: false,
                 }));
@@ -78,20 +78,21 @@ impl VariationsGraph {
         let mut prod_count: usize = 0;
         let mut queue: VecDeque<u128> = VecDeque::new();
         if self.need_cleanup {
-            for value in self.adjacency_map.values_mut() {
-                value.borrow_mut().visited = false;
+            for value in self.adjacency_map.values() {
+                unsafe { (*value.get()).visited = false; }
             }
         }
         self.need_cleanup = true;
-        for (index, node_ref) in &self.adjacency_map {
-            {
-                let node = node_ref.borrow();
+        for (index, node_ptr) in &self.adjacency_map {
+            unsafe {
+                // let Some(node) = self.adjacency_map.get(index) else { continue; };
+                let node = node_ptr.get();
                 // Just skip single prods
                 // If this prod has no variations, but is itself a variation of some prod,
                 // we will discover it later.
-                if node.visited || node.edges.is_empty() ||
+                if (*node).visited || (*node).edges.is_empty() ||
                     // This should be more efficient, than remove loops on insert
-                    !node.edges.iter().any(|edge| edge != index) { continue; }
+                    !(*node).edges.iter().any(|edge| edge != index) { continue; }
             }
 
             queue.push_back(*index);
@@ -99,12 +100,12 @@ impl VariationsGraph {
 
             while let Some(bfs_index) = queue.pop_front() {
                 match self.adjacency_map.get(&bfs_index) {
-                    Some(bfs_node_ref) => {
-                        let mut bfs_node = bfs_node_ref.borrow_mut();
-                        if !bfs_node.visited {
-                            bfs_node.visited = true;
+                    Some(bfs_node_ptr) => unsafe {
+                        let bfs_node = bfs_node_ptr.get();
+                        if !(*bfs_node).visited {
+                            (*bfs_node).visited = true;
                             prod_count += 1;
-                            for bfs_edge in &bfs_node.edges {
+                            for bfs_edge in &(*bfs_node).edges {
                                 queue.push_back(*bfs_edge);
                             }
                         }
