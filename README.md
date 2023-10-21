@@ -22,6 +22,6 @@ Run tests
 
 Run Rust linter
 
-    cargo clippy [--fix]
+    cargo clippy [--fix] [-- --no-deps]
 
 Local Rust and Python versions are managed by [rtx](.rtx.toml)
