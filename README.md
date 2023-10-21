@@ -4,16 +4,24 @@ Helps to calculate product variations statistic. Implemented in rust.
 
 # Development
 
-To install dependencies
+Install dependencies
 
     pipenv install
 
-To build and install the package into the virtual env
+Build and install the package into the virtual env
 
     pipenv run maturin develop
 
-To build the crate into python packages
+Build the crate into python packages
 
     pipenv run maturin build
+
+Run tests
+
+    pipenv run pytest
+
+Run Rust linter
+
+    cargo clippy [--fix]
 
 Local Rust and Python versions are managed by [rtx](.rtx.toml)

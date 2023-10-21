@@ -9,6 +9,7 @@ maturin = "*"
 [dev-packages]
 maturin = "*"
 ipython = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.10"
