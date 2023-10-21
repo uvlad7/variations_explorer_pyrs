@@ -32,14 +32,14 @@ impl VariationsGraph {
     /// :raises TypeError: If prod_md5 cannot be converted to String, variations_md5 cannot
     /// be converted to Sequence or one of the variations_md5 elements cannot be converted to string.
     /// type: (str, list[str] | typing.Sequence[str]) -> None
-    fn insert(&mut self, py: Python<'_>, prod_md5: &str, variations_md5: Vec<&str>) -> PyResult<()> {
-        py.allow_threads(|| self.insert_impl(prod_md5, variations_md5))
+    fn insert(&mut self, prod_md5: &str, variations_md5: Vec<&str>) -> PyResult<()> {
+        self.insert_impl(prod_md5, variations_md5)
     }
 
     /// Calculates statistic. Can be safely called multiple times.
     /// type: () -> variations_explorer_pyrs.typing.StatInfo
     fn calc_stats(&mut self, py: Python<'_>) -> PyResult<Py<PyDict>> {
-        let stats = py.allow_threads(|| self.calc_stats_impl());
+        let stats = self.calc_stats_impl();
         let res: &PyDict = PyDict::new(py);
         res.set_item(PyString::new(py, "number_of_variation_groups"), stats.0)?;
         res.set_item(PyString::new(py, "count_of_products_in_groups"), stats.1)?;
