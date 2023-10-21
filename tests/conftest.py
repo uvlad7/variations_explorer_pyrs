@@ -4,8 +4,9 @@ from variations_explorer_pyrs import VariationsGraph
 
 def create_graph(data):
     vg = VariationsGraph()
-    for prod_md5, variations_md5 in data:
-        vg.insert(prod_md5, variations_md5)
+    # for prod_md5, variations_md5 in data:
+    #     vg.insert(prod_md5, variations_md5)
+    vg.multi_insert(data)
     return vg
 
 

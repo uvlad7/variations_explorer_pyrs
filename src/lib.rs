@@ -36,6 +36,16 @@ impl VariationsGraph {
         self.insert_impl(prod_md5, variations_md5)
     }
 
+    fn multi_insert(&mut self, data: Vec<(&str, Vec<&str>)>) -> PyResult<()> {
+        for (prod_md5, variations_md5) in data {
+            let res = self.insert_impl(prod_md5, variations_md5);
+            if res.is_err() {
+                return res;
+            }
+        }
+        Ok(())
+    }
+
     /// Calculates statistic. Can be safely called multiple times.
     /// type: () -> variations_explorer_pyrs.typing.StatInfo
     fn calc_stats(&mut self, py: Python<'_>) -> PyResult<Py<PyDict>> {
