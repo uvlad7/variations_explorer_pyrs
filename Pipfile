@@ -10,6 +10,7 @@ maturin = "*"
 maturin = "*"
 ipython = "*"
 pytest = "*"
+pytest-reraise = "*"
 
 [requires]
 python_version = "3.10"
