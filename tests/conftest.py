@@ -74,5 +74,6 @@ def virtual_source_node():
     return create_graph([
         ("1", ["2"]),
         # 2 - virtual node, that connects 1 and 3 source nodes
-        ("3", ["2"])
+        ("3", ["2", "4"]),
+        ("4", ["2"])
     ])

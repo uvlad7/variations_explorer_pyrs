@@ -108,7 +108,7 @@ impl VariationsGraph {
     }
 
     fn calc_stats_impl(&mut self) -> Result<(u32, u32), &str> {
-        let mut num_groups: u32 = 0;
+        let mut group_count: u32 = 0;
         let mut prod_count: u32 = 0;
         let mut queue: VecDeque<u128> = VecDeque::new();
         let mut virtual_nodes: HashMap<u128, u32> = HashMap::new();
@@ -118,6 +118,8 @@ impl VariationsGraph {
             }
         }
         self.need_cleanup = true;
+
+        let mut curr_group_num: u32 = 0;
         for (index, node_ptr) in &self.adjacency_map {
             unsafe {
                 // let Some(node) = self.adjacency_map.get(index) else { continue; };
@@ -132,11 +134,12 @@ impl VariationsGraph {
             }
 
             queue.push_back(*index);
-            // match num_groups.checked_add(1) {
-            //     Some(v) => num_groups = v,
-            //     None => return Err("num_groups overflow")
+            // match group_count.checked_add(1) {
+            //     Some(v) => group_count = v,
+            //     None => return Err("group_count overflow")
             // };
-            num_groups += 1;
+            group_count += 1;
+            curr_group_num += 1;
 
             // Handle source nodes: nodes which don't have any incoming edge
             let mut has_collision = false;
@@ -145,9 +148,9 @@ impl VariationsGraph {
                     Some(bfs_node_ptr) => unsafe {
                         let bfs_node = bfs_node_ptr.get();
                         if (*bfs_node).group_number != 0 {
-                            if (*bfs_node).group_number < num_groups { has_collision = true; }
+                            if (*bfs_node).group_number != curr_group_num { has_collision = true; }
                         } else {
-                            (*bfs_node).group_number = num_groups;
+                            (*bfs_node).group_number = curr_group_num;
                             // match prod_count.checked_add(1) {
                             //     Some(v) => prod_count = v,
                             //     None => return Err("prod_count overflow")
@@ -160,9 +163,11 @@ impl VariationsGraph {
                     }
                     None => {
                         match virtual_nodes.entry(bfs_index) {
-                            Entry::Occupied(_) => { has_collision = true; }
-                            Entry::Vacant(entry) => {
-                                entry.insert(num_groups);
+                            Entry::Occupied(o_entry) => {
+                                if *o_entry.get() != curr_group_num { has_collision = true; }
+                            }
+                            Entry::Vacant(v_entry) => {
+                                v_entry.insert(curr_group_num);
                                 // match prod_count.checked_add(1) {
                                 //     Some(v) => prod_count = v,
                                 //     None => return Err("prod_count overflow")
@@ -173,9 +178,9 @@ impl VariationsGraph {
                     }
                 };
             }
-            if has_collision { num_groups -= 1; }
+            if has_collision { group_count -= 1; }
         }
-        Ok((num_groups, prod_count))
+        Ok((group_count, prod_count))
     }
 }
 

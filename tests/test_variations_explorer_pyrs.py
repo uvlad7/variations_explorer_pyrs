@@ -145,7 +145,7 @@ def test_source_nodes(source_node, virtual_source_node):
 
     assert virtual_source_node.calc_stats() == {
         "number_of_variation_groups": 1,
-        "count_of_products_in_groups": 3,
+        "count_of_products_in_groups": 4,
     }
 
 
