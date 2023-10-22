@@ -4,7 +4,7 @@ from threading import Thread
 
 import pytest
 
-from conftest import hex_str
+from conftest import hex_str, create_graph
 from variations_explorer_pyrs import VariationsGraph
 
 
@@ -135,6 +135,10 @@ def test_repr(full_group):
   ("2", ["1", "3"]),
   ("3", ["1", "2"]),
 ]""".splitlines()[1:-1])
+
+    assert repr(create_graph([("10", ["20", "30"])])) == """[
+  ("10", ["20", "30"]),
+]"""
 
 
 def test_source_nodes(source_node, virtual_source_node):

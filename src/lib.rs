@@ -31,12 +31,12 @@ impl VariationsGraph {
         let mut serialized = "[".to_string();
         for (index, node_ptr) in &self.adjacency_map {
             serialized.push_str("\n  (\"");
-            serialized.push_str(&*index.to_string());
+            serialized.push_str(&*format!("{:x}", index));
             serialized.push_str("\", [");
             unsafe {
                 for node in &(*node_ptr.get()).edges {
                     serialized.push_str("\"");
-                    serialized.push_str(&*node.to_string());
+                    serialized.push_str(&*format!("{:x}", node));
                     serialized.push_str("\", ");
                 }
             }
