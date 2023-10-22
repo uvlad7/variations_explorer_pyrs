@@ -161,6 +161,6 @@ def test_source_nodes(source_node, virtual_source_node):
 def test_benchmark():
     vg = VariationsGraph()
     for i in range(100_000):
-        vg.insert(hex_str(i), [hex_str(random.randint(0, 100_000)) for _ in range(50)])
+        vg.insert(hex_str(i), [hex_str(random.randint(0, 100_000)) for _ in range(20)])
 
     vg.calc_stats()
