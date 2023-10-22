@@ -1,3 +1,5 @@
+import pytest
+
 from variations_explorer_pyrs import VariationsGraph
 from threading import Thread
 
@@ -92,15 +94,52 @@ def test_threading(reraise):
 
 def test_multi_insert():
     vg = VariationsGraph()
-    try:
+    with pytest.raises(ValueError):
         vg.multi_insert([
             ("1", ["2", "3"]),
             ("4", ["5", "g"]),
             ("7", ["8", "9"]),
         ])
-    except ValueError:
-        pass
     assert vg.calc_stats() == {
+        "number_of_variation_groups": 1,
+        "count_of_products_in_groups": 3,
+    }
+
+    vg_single = VariationsGraph()
+    vg_multi = VariationsGraph()
+    data = [
+        (
+            str(i),
+            [
+                str(j) for j in range(i - (i % 10), i - (i % 10) + 10) if j != i
+            ]
+        )
+        for i in range(100)
+    ]
+
+    for prod_md5, variations_md5 in data:
+        vg_single.insert(prod_md5, variations_md5)
+    vg_multi.multi_insert(data)
+
+    assert set(repr(vg_single).splitlines()[1:-1]) == set(repr(vg_multi).splitlines()[1:-1])
+
+
+def test_repr(full_group):
+    # Lines order is not predictable
+    assert set(repr(full_group).splitlines()[1:-1]) == set("""[
+  ("1", ["2", "3"]),
+  ("2", ["1", "3"]),
+  ("3", ["1", "2"]),
+]""".splitlines()[1:-1])
+
+
+def test_source_nodes(source_node, virtual_source_node):
+    assert source_node.calc_stats() == {
+        "number_of_variation_groups": 1,
+        "count_of_products_in_groups": 3,
+    }
+
+    assert virtual_source_node.calc_stats() == {
         "number_of_variation_groups": 1,
         "count_of_products_in_groups": 3,
     }

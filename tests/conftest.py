@@ -1,12 +1,12 @@
 import pytest
+
 from variations_explorer_pyrs import VariationsGraph
 
 
 def create_graph(data):
     vg = VariationsGraph()
-    # for prod_md5, variations_md5 in data:
-    #     vg.insert(prod_md5, variations_md5)
-    vg.multi_insert(data)
+    for prod_md5, variations_md5 in data:
+        vg.insert(prod_md5, variations_md5)
     return vg
 
 
@@ -53,4 +53,22 @@ def duplicates():
         ("1", ["1", "3", "4"]),
         ("2", ["1", "3"]),
         ("3", ["1", "2"]),
+    ])
+
+
+@pytest.fixture
+def source_node():
+    return create_graph([
+        ("1", ["2"]),
+        ("2", ["1"]),
+        ("3", ["1", "2"])  # source node
+    ])
+
+
+@pytest.fixture
+def virtual_source_node():
+    return create_graph([
+        ("1", ["2"]),
+        # 2 - virtual node, that connects 1 and 3 source nodes
+        ("3", ["2"])
     ])
