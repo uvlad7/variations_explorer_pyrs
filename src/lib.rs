@@ -1,13 +1,15 @@
 use std::cell::UnsafeCell;
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::collections::VecDeque;
+
+use pyo3::exceptions::{PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyString};
 
 struct VariationsGraphNode {
     edges: Vec<u128>,
-    visited: bool,
+    group_number: u32,
 }
 
 /// Stores graph of product MD5 values and their variants
@@ -69,7 +71,9 @@ impl VariationsGraph {
     /// Calculates statistic. Can be safely called multiple times.
     /// type: () -> variations_explorer_pyrs.typing.StatInfo
     fn calc_stats(&mut self, py: Python<'_>) -> PyResult<Py<PyDict>> {
-        let stats = self.calc_stats_impl();
+        let stats = self.calc_stats_impl().map_err(|error|
+            PyRuntimeError::new_err(error.to_string())
+        )?;
         let res: &PyDict = PyDict::new(py);
         res.set_item(PyString::new(py, "number_of_variation_groups"), stats.0)?;
         res.set_item(PyString::new(py, "count_of_products_in_groups"), stats.1)?;
@@ -96,20 +100,21 @@ impl VariationsGraph {
             None => {
                 self.adjacency_map.insert(prod, UnsafeCell::new(VariationsGraphNode {
                     edges: variations,
-                    visited: false,
+                    group_number: 0,
                 }));
             }
         };
         Ok(())
     }
 
-    fn calc_stats_impl(&mut self) -> (usize, usize) {
-        let mut num_groups: usize = 0;
-        let mut prod_count: usize = 0;
+    fn calc_stats_impl(&mut self) -> Result<(u32, u32), &str> {
+        let mut num_groups: u32 = 0;
+        let mut prod_count: u32 = 0;
         let mut queue: VecDeque<u128> = VecDeque::new();
+        let mut virtual_nodes: HashMap<u128, u32> = HashMap::new();
         if self.need_cleanup {
             for value in self.adjacency_map.values() {
-                unsafe { (*value.get()).visited = false; }
+                unsafe { (*value.get()).group_number = 0; }
             }
         }
         self.need_cleanup = true;
@@ -120,20 +125,33 @@ impl VariationsGraph {
                 // Just skip single prods
                 // If this prod has no variations, but is itself a variation of some prod,
                 // we will discover it later.
-                if (*node).visited || (*node).edges.is_empty() ||
+                if (*node).group_number != 0 ||
+                    (*node).edges.is_empty() ||
                     // This should be more efficient, than remove loops on insert
                     !(*node).edges.iter().any(|edge| edge != index) { continue; }
             }
 
             queue.push_back(*index);
+            // match num_groups.checked_add(1) {
+            //     Some(v) => num_groups = v,
+            //     None => return Err("num_groups overflow")
+            // };
             num_groups += 1;
 
+            // Handle source nodes: nodes which don't have any incoming edge
+            let mut has_collision = false;
             while let Some(bfs_index) = queue.pop_front() {
                 match self.adjacency_map.get(&bfs_index) {
                     Some(bfs_node_ptr) => unsafe {
                         let bfs_node = bfs_node_ptr.get();
-                        if !(*bfs_node).visited {
-                            (*bfs_node).visited = true;
+                        if (*bfs_node).group_number != 0 {
+                            if (*bfs_node).group_number < num_groups { has_collision = true; }
+                        } else {
+                            (*bfs_node).group_number = num_groups;
+                            // match prod_count.checked_add(1) {
+                            //     Some(v) => prod_count = v,
+                            //     None => return Err("prod_count overflow")
+                            // };
                             prod_count += 1;
                             for bfs_edge in &(*bfs_node).edges {
                                 queue.push_back(*bfs_edge);
@@ -141,12 +159,23 @@ impl VariationsGraph {
                         }
                     }
                     None => {
-                        prod_count += 1;
+                        match virtual_nodes.entry(bfs_index) {
+                            Entry::Occupied(_) => { num_groups -= 1; }
+                            Entry::Vacant(entry) => {
+                                entry.insert(num_groups);
+                                // match prod_count.checked_add(1) {
+                                //     Some(v) => prod_count = v,
+                                //     None => return Err("prod_count overflow")
+                                // };
+                                prod_count += 1;
+                            }
+                        }
                     }
                 };
             }
+            if has_collision { num_groups -= 1; }
         }
-        (num_groups, prod_count)
+        Ok((num_groups, prod_count))
     }
 }
 
