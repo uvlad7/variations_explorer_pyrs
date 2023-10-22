@@ -11,6 +11,8 @@ maturin = "*"
 ipython = "*"
 pytest = "*"
 pytest-reraise = "*"
+pytest-resource-usage = "*"
+psutil = "*"
 
 [requires]
 python_version = "3.10"

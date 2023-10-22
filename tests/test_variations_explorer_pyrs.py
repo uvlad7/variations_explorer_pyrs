@@ -1,7 +1,10 @@
+import os
+import random
+from threading import Thread
+
 import pytest
 
 from variations_explorer_pyrs import VariationsGraph
-from threading import Thread
 
 
 def test_multi(full_group, partial_group):
@@ -143,3 +146,16 @@ def test_source_nodes(source_node, virtual_source_node):
         "number_of_variation_groups": 1,
         "count_of_products_in_groups": 3,
     }
+
+
+@pytest.mark.report_uss
+@pytest.mark.report_tracemalloc
+@pytest.mark.report_duration
+@pytest.mark.skipif(os.environ.get("I_HAVE_A_LOT_OF_TIME", "false") != "true",
+                    reason="I don't have a lot of time")
+def test_benchmark():
+    vg = VariationsGraph()
+    for i in range(100_000):
+        vg.insert(str(i), [str(random.randint(0, 100_000)) for _ in range(20)])
+
+    vg.calc_stats()
