@@ -160,7 +160,7 @@ impl VariationsGraph {
                     }
                     None => {
                         match virtual_nodes.entry(bfs_index) {
-                            Entry::Occupied(_) => { num_groups -= 1; }
+                            Entry::Occupied(_) => { has_collision = true; }
                             Entry::Vacant(entry) => {
                                 entry.insert(num_groups);
                                 // match prod_count.checked_add(1) {
