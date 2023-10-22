@@ -58,6 +58,12 @@ impl VariationsGraph {
         self.insert_impl(prod_md5, variations_md5)
     }
 
+    /// Adds multiple nodes and their leaves into the graph,
+    /// see `insert` for the details.
+    /// This method may insert data partially if an exception occurred,
+    /// and if you want to retry, you need to insert all the data after the broken item.
+    /// If you also insert all the data before it, it will result in duplication, but.
+    /// will not affect the `calc_stats` result.
     fn multi_insert(&mut self, data: Vec<(&str, Vec<&str>)>) -> PyResult<()> {
         for (prod_md5, variations_md5) in data {
             let res = self.insert_impl(prod_md5, variations_md5);
