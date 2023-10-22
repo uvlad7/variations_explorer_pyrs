@@ -88,3 +88,19 @@ def test_threading(reraise):
         "number_of_variation_groups": 500,
         "count_of_products_in_groups": 1000,
     }
+
+
+def test_multi_insert():
+    vg = VariationsGraph()
+    try:
+        vg.multi_insert([
+            ("1", ["2", "3"]),
+            ("4", ["5", "g"]),
+            ("7", ["8", "9"]),
+        ])
+    except ValueError:
+        pass
+    assert vg.calc_stats() == {
+        "number_of_variation_groups": 1,
+        "count_of_products_in_groups": 3,
+    }

@@ -24,6 +24,26 @@ impl VariationsGraph {
         Self { adjacency_map: HashMap::new(), need_cleanup: false }
     }
 
+    #[pyo3(name = "__repr__")]
+    fn repr(&self) -> String {
+        let mut serialized = "[".to_string();
+        for (index, node_ptr) in &self.adjacency_map {
+            serialized.push_str("\n  (\"");
+            serialized.push_str(&*index.to_string());
+            serialized.push_str("\", [");
+            unsafe {
+                for node in &(*node_ptr.get()).edges {
+                    serialized.push_str("\"");
+                    serialized.push_str(&*node.to_string());
+                    serialized.push_str("\", ");
+                }
+            }
+            serialized.replace_range((serialized.len() - 2).., "]),");
+        }
+        serialized.push_str("\n]");
+        return serialized;
+    }
+
     /// Adds a node and its leaves into the graph. If the node already exist, leaves are concatenated.
     /// Duplicates and self-pointing references are allowed.
     /// :param prod_md5: MD5 string of the product.
