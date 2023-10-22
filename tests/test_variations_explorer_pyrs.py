@@ -4,6 +4,7 @@ from threading import Thread
 
 import pytest
 
+from conftest import hex_str
 from variations_explorer_pyrs import VariationsGraph
 
 
@@ -31,8 +32,8 @@ def test_leaves():
     but the order in HashMap is unpredictable."""
     vg = VariationsGraph()
     for i in range(100_000):
-        vg.insert(str(i), [])
-        vg.insert(str(i + 100_000), [str(i)])
+        vg.insert(hex_str(i), [])
+        vg.insert(hex_str(i + 100_000), [hex_str(i)])
     assert vg.calc_stats() == {
         "number_of_variation_groups": 100_000,
         "count_of_products_in_groups": 200_000,
@@ -56,8 +57,8 @@ def test_duplicates(duplicates):
 def test_threading(reraise):
     vg = VariationsGraph()
     for i in range(1000):
-        vg.insert(str(i), [])
-        vg.insert(str(i + 100_000), [str(i)])
+        vg.insert(hex_str(i), [])
+        vg.insert(hex_str(i + 100_000), [hex_str(i)])
     expected = {
         "number_of_variation_groups": 1000,
         "count_of_products_in_groups": 2000,
@@ -79,7 +80,7 @@ def test_threading(reraise):
     def calc_or_insert(j):
         with reraise:
             if j % 2 == 0:
-                vg.insert(str(j), [str(j + 1)])
+                vg.insert(hex_str(j), [hex_str(j + 1)])
             else:
                 vg.calc_stats()
 
@@ -112,9 +113,9 @@ def test_multi_insert():
     vg_multi = VariationsGraph()
     data = [
         (
-            str(i),
+            hex_str(i),
             [
-                str(j) for j in range(i - (i % 10), i - (i % 10) + 10) if j != i
+                hex_str(j) for j in range(i - (i % 10), i - (i % 10) + 10) if j != i
             ]
         )
         for i in range(100)
@@ -156,6 +157,6 @@ def test_source_nodes(source_node, virtual_source_node):
 def test_benchmark():
     vg = VariationsGraph()
     for i in range(100_000):
-        vg.insert(str(i), [str(random.randint(0, 100_000)) for _ in range(20)])
+        vg.insert(hex_str(i), [hex_str(random.randint(0, 100_000)) for _ in range(50)])
 
     vg.calc_stats()

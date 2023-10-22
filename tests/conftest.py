@@ -10,6 +10,10 @@ def create_graph(data):
     return vg
 
 
+def hex_str(val):
+    return f'{val:x}'
+
+
 @pytest.fixture
 def full_group():
     return create_graph([
