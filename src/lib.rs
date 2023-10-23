@@ -55,7 +55,20 @@ impl VariationsGraph {
     /// be converted to Sequence or one of the variations_md5 elements cannot be converted to string.
     /// type: (str, list[str] | typing.Sequence[str]) -> None
     fn insert(&mut self, prod_md5: &str, variations_md5: Vec<&str>) -> PyResult<()> {
-        self.insert_impl(prod_md5, variations_md5)
+        let prod: u128 = self.convert_hex_str(prod_md5)?;
+        self.insert_impl(prod, variations_md5)
+    }
+
+    fn db_data_insert(&mut self, prod_md5: Vec<u8>, variations_md5: &[u8]) -> PyResult<()> {
+        let variations_md5_vec: Vec<&str> = serde_json::from_slice(variations_md5).map_err(|err|
+            PyValueError::new_err(err.to_string())
+        )?;
+        if prod_md5.len() != 16 { return Err(PyValueError::new_err("prod_md5 has invalid len")); };
+        let prod_md5_arr: [u8; 16] = prod_md5.try_into().map_err(|_err|
+            PyValueError::new_err("unable to convert prod_md5 into [u8; 16]")
+        )?;
+        let prod_md5_parsed = u128::from_be_bytes(prod_md5_arr);
+        self.insert_impl(prod_md5_parsed, variations_md5_vec)
     }
 
     /// Adds multiple nodes and their leaves into the graph,
@@ -66,7 +79,8 @@ impl VariationsGraph {
     /// will not affect the `calc_stats` result.
     fn multi_insert(&mut self, data: Vec<(&str, Vec<&str>)>) -> PyResult<()> {
         for (prod_md5, variations_md5) in data {
-            let res = self.insert_impl(prod_md5, variations_md5);
+            let res = self.insert_impl(
+                self.convert_hex_str(prod_md5)?, variations_md5);
             if res.is_err() {
                 return res;
             }
@@ -88,17 +102,18 @@ impl VariationsGraph {
 }
 
 impl VariationsGraph {
-    fn insert_impl(&mut self, prod_md5: &str, variations_md5: Vec<&str>) -> PyResult<()> {
-        let prod: u128 = u128::from_str_radix(prod_md5, 16).map_err(|error|
+    fn convert_hex_str(&self, md5_str: &str) -> PyResult<u128> {
+        let res = u128::from_str_radix(md5_str, 16).map_err(|error|
             PyValueError::new_err(error.to_string())
         )?;
-        let variations_map: Result<Vec<u128>, _> = variations_md5.iter().map(|&val|
-            u128::from_str_radix(val, 16)
+        return Ok(res);
+    }
+    fn insert_impl(&mut self, prod: u128, variations_md5: Vec<&str>) -> PyResult<()> {
+        let variations_map: Result<Vec<u128>, PyErr> = variations_md5.iter().map(|&val|
+            self.convert_hex_str(val)
         ).collect();
 
-        let mut variations: Vec<u128> = variations_map.map_err(|error|
-            PyValueError::new_err(error.to_string())
-        )?;
+        let mut variations: Vec<u128> = variations_map?;
         match self.adjacency_map.get_mut(&prod) {
             Some(existing_variations) => {
                 unsafe { (*existing_variations.get()).edges.append(&mut variations); }

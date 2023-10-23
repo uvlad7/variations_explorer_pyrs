@@ -164,3 +164,16 @@ def test_benchmark():
         vg.insert(hex_str(i), [hex_str(random.randint(0, 100_000)) for _ in range(20)])
 
     vg.calc_stats()
+
+
+def test_db_data_insert(db_data):
+    locations = {key: value for key, value in db_data["locations"]}
+    product_variations = {key: value for key, value in db_data["product_variations"]}
+    vg = VariationsGraph()
+    for product_id, url_key in locations.items():
+        vg.db_data_insert(url_key, product_variations[product_id])
+
+    assert vg.calc_stats() == {
+        "number_of_variation_groups": 1 + 1 + 1 + 1 + 1 + 1,
+        "count_of_products_in_groups": 3 + 15 + 2 + 5 + 5 + 2,
+    }
