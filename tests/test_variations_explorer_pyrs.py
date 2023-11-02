@@ -128,7 +128,7 @@ def test_multi_insert():
     assert set(repr(vg_single).splitlines()[1:-1]) == set(repr(vg_multi).splitlines()[1:-1])
 
 
-def test_repr(full_group):
+def test_repr(full_group, partial_group):
     # Lines order is not predictable
     assert set(repr(full_group).splitlines()[1:-1]) == set("""[
   ("1", ["2", "3"]),
@@ -136,8 +136,8 @@ def test_repr(full_group):
   ("3", ["1", "2"]),
 ]""".splitlines()[1:-1])
 
-    assert repr(create_graph([("10", ["20", "30"])])) == """[
-  ("10", ["20", "30"]),
+    assert repr(partial_group) == """[
+  ("1", ["2", "3"]),
 ]"""
 
 
