@@ -34,9 +34,9 @@ impl VariationsGraph {
             serialized.push_str(&*format!("{:x}", index));
             serialized.push_str("\", [");
             unsafe {
-                for node in &(*node_ptr.get()).edges {
+                for edge in &(*node_ptr.get()).edges {
                     serialized.push_str("\"");
-                    serialized.push_str(&*format!("{:x}", node));
+                    serialized.push_str(&*format!("{:x}", edge));
                     serialized.push_str("\", ");
                 }
             }
@@ -59,6 +59,7 @@ impl VariationsGraph {
         self.insert_impl(prod, variations_md5)
     }
 
+    /// type: (list[int] | bytes | bytearray, ) -> None
     fn db_data_insert(&mut self, prod_md5: Vec<u8>, variations_md5: &[u8]) -> PyResult<()> {
         let variations_md5_vec: Vec<&str> = serde_json::from_slice(variations_md5).map_err(|err|
             PyValueError::new_err(err.to_string())
