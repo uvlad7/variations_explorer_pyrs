@@ -59,7 +59,7 @@ impl VariationsGraph {
         self.insert_impl(prod, variations_md5)
     }
 
-    /// type: (list[int] | bytes | bytearray, ) -> None
+    /// type: (list[int] | bytes | bytearray, bytes) -> None
     fn db_data_insert(&mut self, prod_md5: Vec<u8>, variations_md5: &[u8]) -> PyResult<()> {
         let variations_md5_vec: Vec<&str> = serde_json::from_slice(variations_md5).map_err(|err|
             PyValueError::new_err(err.to_string())
@@ -115,7 +115,7 @@ impl VariationsGraph {
         ).collect();
 
         let mut variations: Vec<u128> = variations_map?;
-        match self.adjacency_map.get_mut(&prod) {
+        match self.adjacency_map.get_mut(&prod) { // Todo: Optimize insert with .entry
             Some(existing_variations) => {
                 unsafe { (*existing_variations.get()).edges.append(&mut variations); }
             }

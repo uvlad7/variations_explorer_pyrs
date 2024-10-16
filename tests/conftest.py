@@ -11,7 +11,7 @@ def create_graph(data):
 
 
 def hex_str(val):
-    return f'{val:x}'
+    return f'{val:032x}'
 
 
 @pytest.fixture
